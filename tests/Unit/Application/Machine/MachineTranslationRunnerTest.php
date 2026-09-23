@@ -6,7 +6,6 @@ namespace Eekes\SuluTranslationsBundle\Tests\Unit\Application\Machine;
 
 use Eekes\SuluTranslationsBundle\Application\Machine\IcuMessageSplitter;
 use Eekes\SuluTranslationsBundle\Application\Machine\MachineTranslationRunner;
-use Eekes\SuluTranslationsBundle\Application\Machine\MachineTranslatorInterface;
 use Eekes\SuluTranslationsBundle\Application\Machine\PlaceholderProtector;
 use Eekes\SuluTranslationsBundle\Application\Manager\TranslationManagerInterface;
 use Eekes\SuluTranslationsBundle\Application\Validation\IcuMessageValidator;
@@ -18,8 +17,7 @@ use PHPUnit\Framework\TestCase;
 
 class MachineTranslationRunnerTest extends TestCase
 {
-    /** @var list<list<string>> every batch of texts the engine was handed */
-    private array $sent = [];
+    private ?RecordingMachineTranslator $translator = null;
 
     public function testAPluralMessageIsSentAsSentencesAndComesBackAsAMessage(): void
     {
@@ -40,7 +38,7 @@ class MachineTranslationRunnerTest extends TestCase
         );
 
         // Two sentences, no syntax: `one {` is not something to translate.
-        self::assertSame([['# item in your cart', '# items in your cart']], $this->sent);
+        self::assertSame([['# item in your cart', '# items in your cart']], $this->sent());
     }
 
     public function testAResultThatNoLongerParsesIsDiscardedRatherThanStored(): void
@@ -57,7 +55,7 @@ class MachineTranslationRunnerTest extends TestCase
         $runner = $this->runner(['Hallo <x id="0"/>, lees meer']);
 
         self::assertSame('Hallo %name%, lees meer', $runner->translateText('Hello %name%, read more', 'en', 'nl'));
-        self::assertSame([['Hello <x id="0"/>, read more']], $this->sent);
+        self::assertSame([['Hello <x id="0"/>, read more']], $this->sent());
     }
 
     public function testARowTheWritePathRefusesDoesNotTakeTheRunDownWithIt(): void
@@ -67,7 +65,7 @@ class MachineTranslationRunnerTest extends TestCase
         // after it went untranslated with nothing said about why.
         $manager = $this->createMock(TranslationManagerInterface::class);
         $manager->method('stageValue')->willReturnCallback(
-            function (Translation $translation, ?string $value) {
+            static function (Translation $translation, ?string $value) {
                 if ('refused' === $value) {
                     throw new InvalidIcuMessageException('U_ILLEGAL_ARGUMENT_ERROR', 'fr');
                 }
@@ -84,7 +82,7 @@ class MachineTranslationRunnerTest extends TestCase
         $repository->method('findById')->willReturn(new Translation(new TranslationKey('messages', 'a'), 'fr'));
 
         $runner = new MachineTranslationRunner(
-            $this->translator(['refused', 'fine']),
+            new RecordingMachineTranslator(['refused', 'fine']),
             $repository,
             $manager,
             new PlaceholderProtector(),
@@ -105,8 +103,10 @@ class MachineTranslationRunnerTest extends TestCase
      */
     private function runner(array $results): MachineTranslationRunner
     {
+        $this->translator = new RecordingMachineTranslator($results);
+
         return new MachineTranslationRunner(
-            $this->translator($results),
+            $this->translator,
             $this->createMock(TranslationRepositoryInterface::class),
             $this->createMock(TranslationManagerInterface::class),
             new PlaceholderProtector(),
@@ -116,20 +116,12 @@ class MachineTranslationRunnerTest extends TestCase
     }
 
     /**
-     * @param list<string> $results
+     * @return list<list<string>>
      */
-    private function translator(array $results): MachineTranslatorInterface
+    private function sent(): array
     {
-        $translator = $this->createMock(MachineTranslatorInterface::class);
-        $translator->method('supports')->willReturn(true);
-        $translator->method('translate')->willReturnCallback(
-            function (array $texts) use ($results): array {
-                $this->sent[] = $texts;
+        self::assertNotNull($this->translator, 'No runner was built, so nothing was sent.');
 
-                return \array_slice($results, 0, \count($texts));
-            },
-        );
-
-        return $translator;
+        return $this->translator->sent;
     }
 }

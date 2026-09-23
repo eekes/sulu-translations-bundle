@@ -144,21 +144,15 @@ class TranslationsAdminTest extends TestCase
 
     public function testTranslatingTheSelectionIsOfferedOnlyWithAnEngineAndTheRightToEdit(): void
     {
-        $types = fn (bool $machineTranslation, array $permissions) => \array_map(
-            static fn (ToolbarAction $action) => $action->getType(),
-            $this->build($permissions, $machineTranslation)->get(TranslationsAdmin::LIST_VIEW)
-                ->getView()->getOption('toolbarActions'),
-        );
-
         $all = [PermissionTypes::VIEW, PermissionTypes::ADD, PermissionTypes::EDIT, PermissionTypes::DELETE];
 
-        self::assertContains('eekes_sulu_translations.translate_selection', $types(true, $all));
+        self::assertContains('eekes_sulu_translations.translate_selection', $this->listToolbarActionTypes(true, $all));
 
         // No engine: a button that can only fail.
-        self::assertNotContains('eekes_sulu_translations.translate_selection', $types(false, $all));
+        self::assertNotContains('eekes_sulu_translations.translate_selection', $this->listToolbarActionTypes(false, $all));
 
         // It writes every row it translates, so read-only means no.
-        self::assertNotContains('eekes_sulu_translations.translate_selection', $types(true, [PermissionTypes::VIEW]));
+        self::assertNotContains('eekes_sulu_translations.translate_selection', $this->listToolbarActionTypes(true, [PermissionTypes::VIEW]));
     }
 
     public function testTurningMachineTranslationOnAddsNothingToTheFormToolbar(): void
@@ -209,6 +203,29 @@ class TranslationsAdminTest extends TestCase
             null,
             $machineTranslation,
         );
+    }
+
+    /**
+     * @param list<string> $permissions
+     *
+     * @return list<string>
+     */
+    private function listToolbarActionTypes(bool $machineTranslation, array $permissions): array
+    {
+        $actions = $this->build($permissions, $machineTranslation)
+            ->get(TranslationsAdmin::LIST_VIEW)->getView()->getOption('toolbarActions');
+
+        self::assertIsArray($actions);
+
+        $types = [];
+
+        foreach ($actions as $action) {
+            self::assertInstanceOf(ToolbarAction::class, $action);
+
+            $types[] = $action->getType();
+        }
+
+        return $types;
     }
 
     /**

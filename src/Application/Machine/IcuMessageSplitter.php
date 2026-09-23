@@ -37,9 +37,9 @@ class IcuMessageSplitter
 
     /**
      * @return array{template: string, literals: list<string>}|null null when the message has
-     *                                                             no plural or select in it,
-     *                                                             or is one this cannot take
-     *                                                             apart and put back together
+     *                                                              no plural or select in it,
+     *                                                              or is one this cannot take
+     *                                                              apart and put back together
      */
     public function split(string $message): ?array
     {

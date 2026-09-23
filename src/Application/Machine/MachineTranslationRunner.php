@@ -246,7 +246,6 @@ class MachineTranslationRunner
 
         $summary = ['translated' => $translated, 'skipped' => $skipped, 'discarded' => $discarded];
 
-
         $this->manager->commit(new TranslationsMachineTranslatedEvent(
             $summary + ['source' => $sourceLocale, 'target' => $targetLocale],
             $targetLocale,
