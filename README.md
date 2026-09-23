@@ -234,7 +234,7 @@ The panel on the form is filled by several different things:
 |---|---|
 | Key, domain | always |
 | Origin | whatever created the key: import (`file`), scan (`code`), an unanswered `trans()` (`runtime`), the add form (`manual`) |
-| **Used in** | **`eekes:translations:scan` only** — nothing else records file and line |
+| **Used in** | **`eekes:translations:scan` only** — nothing else records file and line. It fills this for keys that already exist too, so run it after an import; `--show-locations` prints the same list on the CLI |
 | **Last shown** | the site rendering the key, with `discovery.track_usage` on |
 
 ## How it works
@@ -260,7 +260,7 @@ catalogue.
 | `eekes:translations:generate-migration` | translations → a Doctrine migration, so a release carries them. `--from=files` once at install, `--from=database` before every release after that. |
 | `eekes:translations:import` | files → database, directly. Never overwrites an edited value unless `--overwrite`. |
 | `eekes:translations:export` | database → files. A fallback for a site whose database is down, or XLIFF for an outside translator. |
-| `eekes:translations:scan` | extract keys from templates and PHP, record where they occur, `--mark-orphans`. |
+| `eekes:translations:scan` | extract keys from templates and PHP, record where they occur, `--mark-orphans`. `--show-locations` prints the file and line per key. |
 | `eekes:translations:unused` | keys neither the extractor nor the site has seen lately. |
 | `eekes:translations:prune` | delete keys orphaned for long enough. Reports first; needs `--force`. `--migration` also writes the migration that deletes them everywhere else. |
 | `eekes:translations:translate` | fill the empty values of a language with a machine translation. |

@@ -64,11 +64,19 @@ class CodeScanner
 
     /**
      * @param list<string>|null $paths
+     * @param bool $collectLocations keep the per-key file list in the result, for
+     *                               a caller that prints it. Off by default: a
+     *                               large project holds this twice otherwise, and
+     *                               nothing but the report wants it
      *
-     * @return array{created: int, seen: int, skipped: int, orphaned: int, unorphaned: int}
+     * @return array{created: int, seen: int, skipped: int, orphaned: int, unorphaned: int, recorded: int, changed: int, unlocated: int, locations: list<array{domain: string, key: string, occurrences: list<array{path: string, line: int}>}>}
      */
-    public function scan(?array $paths = null, bool $markOrphans = false, bool $dryRun = false): array
-    {
+    public function scan(
+        ?array $paths = null,
+        bool $markOrphans = false,
+        bool $dryRun = false,
+        bool $collectLocations = false,
+    ): array {
         $catalogue = new MessageCatalogue($this->defaultLocale);
 
         foreach ($paths ?? $this->paths as $path) {
@@ -82,13 +90,20 @@ class CodeScanner
         $created = 0;
         $seen = 0;
         $skipped = 0;
+        $recorded = 0;
+        $changed = 0;
+        $unlocated = 0;
         $seenHashes = [];
+        $locations = [];
 
         // Symfony records `sources` metadata from the PHP extractor but not from the Twig one,
         // and in a Sulu project most keys live in templates. So the files are walked once more
         // and every quoted literal that matches a key we found is recorded as an occurrence.
         // Without this the "used in" panel is empty for exactly the keys an editor asks about.
-        $occurrences = $dryRun ? [] : $this->findOccurrences($paths ?? $this->paths, $catalogue);
+        //
+        // A dry run walks them too. "Which files is this key in" is the one question a preview
+        // of this command is asked, and the walk is cheap next to the extraction that just ran.
+        $occurrences = $this->findOccurrences($paths ?? $this->paths, $catalogue);
 
         foreach ($catalogue->all() as $domain => $messages) {
             $realDomain = \str_ends_with($domain, MessageCatalogue::INTL_DOMAIN_SUFFIX)
@@ -110,9 +125,30 @@ class CodeScanner
                     continue;
                 }
 
+                $found = $this->collectOccurrences($catalogue, $domain, $key, $occurrences);
+
+                if ([] === $found) {
+                    // A Twig extension, a key built from an enum, a string the extractor
+                    // recognised without being able to point at a line: counted, because an
+                    // empty "used in" panel otherwise looks exactly like a scan that never ran.
+                    ++$unlocated;
+                } else {
+                    ++$recorded;
+
+                    if ($collectLocations) {
+                        $locations[] = ['domain' => $realDomain, 'key' => $key, 'occurrences' => $found];
+                    }
+                }
+
                 if ($dryRun) {
-                    if (null === $this->keyRepository->findOneByKey($realDomain, $key)) {
+                    $existing = $this->keyRepository->findOneByKey($realDomain, $key);
+
+                    if (null === $existing) {
                         ++$created;
+                    }
+
+                    if ([] !== $found && !$this->isSameList($existing?->getOccurrences() ?? [], $found)) {
+                        ++$changed;
                     }
 
                     continue;
@@ -131,7 +167,14 @@ class CodeScanner
                     ++$created;
                 }
 
-                $this->recordOccurrences($ensured->key, $catalogue, $domain, $key, $occurrences);
+                // Only when it differs, and never when nothing was found: a run narrowed with
+                // --path sees part of the project, and wiping the locations a full run wrote
+                // would make the panel worse the more often it is used.
+                if ([] !== $found && !$this->isSameList($ensured->key->getOccurrences(), $found)) {
+                    $ensured->key->setOccurrences($found);
+                    $this->keyRepository->save($ensured->key, false);
+                    ++$changed;
+                }
             }
         }
 
@@ -149,7 +192,17 @@ class CodeScanner
             $this->synchronizer->flush();
         }
 
-        return ['created' => $created, 'seen' => $seen, 'skipped' => $skipped, 'orphaned' => $orphaned, 'unorphaned' => $unorphaned];
+        return [
+            'created' => $created,
+            'seen' => $seen,
+            'skipped' => $skipped,
+            'orphaned' => $orphaned,
+            'unorphaned' => $unorphaned,
+            'recorded' => $recorded,
+            'changed' => $changed,
+            'unlocated' => $unlocated,
+            'locations' => $locations,
+        ];
     }
 
     /**
@@ -194,7 +247,9 @@ class CodeScanner
     }
 
     /**
-     * Records every file the key occurs in, from **both** sources.
+     * Collects every file the key occurs in, from **both** sources. It writes nothing - the
+     * caller compares the result with what the key already holds, so a scan that found the
+     * same thing again is not a write.
      *
      * Symfony's PHP extractor reports `sources` metadata; its Twig extractor reports none.
      * Taking the metadata when it exists and the literal scan otherwise looks reasonable and
@@ -202,14 +257,15 @@ class CodeScanner
      * controller, because the PHP side happened to answer first. They are merged.
      *
      * @param array<string, list<array{path: string, line: int}>> $scanned
+     *
+     * @return list<array{path: string, line: int}>
      */
-    private function recordOccurrences(
-        TranslationKey $translationKey,
+    private function collectOccurrences(
         MessageCatalogue $catalogue,
         string $domain,
         string $key,
         array $scanned,
-    ): void {
+    ): array {
         /** @var array{sources?: list<string>}|null $metadata */
         $metadata = $catalogue->getMetadata($key, $domain);
 
@@ -234,12 +290,28 @@ class CodeScanner
             $occurrences[] = $occurrence;
         }
 
-        if ([] === $occurrences) {
-            return;
-        }
+        return [] === $occurrences ? [] : $this->deduplicate($occurrences);
+    }
 
-        $translationKey->setOccurrences($this->deduplicate($occurrences));
-        $this->keyRepository->save($translationKey, false);
+    /**
+     * Whether the key already holds exactly these locations.
+     *
+     * Compared on `path:line` rather than with `===`, because MySQL normalises the key order
+     * inside a JSON object: the scanner writes `{path, line}` and reads back `{line, path}`.
+     * A strict comparison calls that a change, and every scan then rewrites every row it
+     * looked at and reports a table full of changes that are not changes.
+     *
+     * @param list<array{path: string, line: int}> $stored
+     * @param list<array{path: string, line: int}> $found
+     */
+    private function isSameList(array $stored, array $found): bool
+    {
+        $flatten = static fn (array $occurrences): array => \array_map(
+            static fn (array $occurrence): string => $occurrence['path'] . ':' . $occurrence['line'],
+            $occurrences,
+        );
+
+        return $flatten($stored) === $flatten($found);
     }
 
     /**

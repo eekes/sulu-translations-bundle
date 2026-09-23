@@ -173,6 +173,89 @@ class CodeScannerTest extends TranslationsTestCase
         self::assertFalse(self::requireKey('sulu_admin.save', 'admin')->isOrphaned());
     }
 
+    public function testItReportsTheLocationsItRecorded(): void
+    {
+        // The whole point of these counters: after an import every key already exists, so
+        // `created` is 0 and the run reads as a no-op while it rewrites every "used in" panel
+        // in the project. Somebody has to be able to see that from the report.
+        self::givenTranslation('imported.key', 'en', 'Came from a file');
+        $this->givenTemplate('page.html.twig', "{{ 'imported.key'|trans }}\n");
+
+        $summary = $this->scanner()->scan([$this->directory]);
+
+        self::assertSame(0, $summary['created']);
+        self::assertSame(1, $summary['recorded']);
+        self::assertSame(1, $summary['changed']);
+        self::assertSame(0, $summary['unlocated']);
+    }
+
+    public function testASecondScanChangesNothing(): void
+    {
+        $this->givenTemplate('page.html.twig', "{{ 'stable.key'|trans }}\n");
+
+        $this->scanner()->scan([$this->directory]);
+        self::getEntityManager()->clear();
+
+        $summary = $this->scanner()->scan([$this->directory]);
+
+        // Still recorded - the key has locations - but nothing was written, which is what
+        // `changed` is there to distinguish.
+        self::assertSame(1, $summary['recorded']);
+        self::assertSame(0, $summary['changed']);
+    }
+
+    public function testANarrowedRunDoesNotWipeWhatAFullRunFound(): void
+    {
+        $this->givenTemplate('page.html.twig', "{{ 'narrow.key'|trans }}\n");
+        $this->scanner()->scan([$this->directory]);
+        self::getEntityManager()->clear();
+
+        // A second directory that uses the key without the first one being scanned: the key is
+        // not in it, so nothing is found for it there. Clearing the locations on that evidence
+        // would make the panel emptier the more often somebody scans a subdirectory.
+        $other = $this->directory . '-other';
+        (new Filesystem())->dumpFile($other . '/other.html.twig', "{{ 'other.narrow.key'|trans }}\n");
+
+        try {
+            $this->scanner()->scan([$other]);
+        } finally {
+            (new Filesystem())->remove($other);
+        }
+
+        self::getEntityManager()->clear();
+        self::assertNotSame([], self::requireKey('narrow.key')->getOccurrences());
+    }
+
+    public function testTheLocationListIsOnlyBuiltWhenItIsAskedFor(): void
+    {
+        $this->givenTemplate('page.html.twig', "{{ 'listed.key'|trans }}\n");
+
+        self::assertSame([], $this->scanner()->scan([$this->directory])['locations']);
+
+        self::getEntityManager()->clear();
+
+        $locations = $this->scanner()->scan([$this->directory], collectLocations: true)['locations'];
+
+        self::assertCount(1, $locations);
+        self::assertSame('listed.key', $locations[0]['key']);
+        self::assertStringEndsWith('page.html.twig', $locations[0]['occurrences'][0]['path']);
+    }
+
+    public function testADryRunStillPreviewsTheLocations(): void
+    {
+        // "Where is this key used" is the question a preview of this command is asked, and it
+        // used to be the one thing --dry-run could not answer: occurrences were not collected
+        // at all, so the preview reported a location count of nothing.
+        $this->givenTemplate('page.html.twig', "{{ 'previewed.key'|trans }}\n");
+
+        $summary = $this->scanner()->scan([$this->directory], dryRun: true, collectLocations: true);
+
+        self::assertSame(1, $summary['recorded']);
+        self::assertSame(1, $summary['changed']);
+        self::assertCount(1, $summary['locations']);
+        self::assertNull(self::findKey('previewed.key'));
+    }
+
     private function givenTemplate(string $name, string $contents): void
     {
         (new Filesystem())->dumpFile($this->directory . '/' . $name, $contents);

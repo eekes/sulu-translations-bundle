@@ -14,11 +14,18 @@ class CommandTest extends TranslationsTestCase
 {
     private ?string $migrationsDirectory = null;
 
+    private ?string $sourceDirectory = null;
+
     protected function tearDown(): void
     {
         if (null !== $this->migrationsDirectory) {
             (new Filesystem())->remove($this->migrationsDirectory);
             $this->migrationsDirectory = null;
+        }
+
+        if (null !== $this->sourceDirectory) {
+            (new Filesystem())->remove($this->sourceDirectory);
+            $this->sourceDirectory = null;
         }
 
         parent::tearDown();
@@ -54,6 +61,64 @@ class CommandTest extends TranslationsTestCase
         // somebody can point at did not arrive and nothing on screen said why.
         self::assertStringContainsString('Left alone: admin', $tester->getDisplay());
         self::assertNull(self::findKey('sulu_media.ai_generated', 'admin'));
+    }
+
+    public function testScanSaysWhatItDidWithTheLocations(): void
+    {
+        // The report this test exists for: import first, so nothing is created, and the run
+        // would otherwise print zeroes across the board while rewriting every "Used in" panel.
+        self::givenTranslation('scanned.from.cli', 'en', 'Already here');
+        $directory = $this->givenSources("{{ 'scanned.from.cli'|trans }}\n");
+
+        $tester = $this->runCommand('eekes:translations:scan', ['--path' => [$directory]]);
+
+        $display = $tester->getDisplay();
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString('locations recorded', $display);
+        self::assertStringContainsString('locations changed', $display);
+        self::assertStringContainsString('no location found', $display);
+    }
+
+    public function testScanCanPrintWhereEveryKeyWasFound(): void
+    {
+        $directory = $this->givenSources("{{ 'located.key'|trans }}\n");
+
+        $tester = $this->runCommand('eekes:translations:scan', [
+            '--path' => [$directory],
+            '--show-locations' => true,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        self::assertStringContainsString('located.key', $display);
+        self::assertStringContainsString('page.html.twig', $display);
+    }
+
+    public function testScanShowsLocationsWithoutWriting(): void
+    {
+        $directory = $this->givenSources("{{ 'previewed.from.cli'|trans }}\n");
+
+        $tester = $this->runCommand('eekes:translations:scan', [
+            '--path' => [$directory],
+            '--show-locations' => true,
+            '--dry-run' => true,
+        ]);
+
+        self::assertStringContainsString('page.html.twig', $tester->getDisplay());
+        self::assertNull(self::findKey('previewed.from.cli'));
+    }
+
+    /**
+     * A throwaway source tree for the extractor, removed with the rest in tearDown.
+     */
+    private function givenSources(string $template): string
+    {
+        $this->sourceDirectory = \sys_get_temp_dir() . '/sulu-translations-cmd-' . \bin2hex(\random_bytes(4));
+
+        (new Filesystem())->dumpFile($this->sourceDirectory . '/page.html.twig', $template);
+
+        return $this->sourceDirectory;
     }
 
     public function testSyncPlaceholdersFillsInWhatWasNeverDeclared(): void
