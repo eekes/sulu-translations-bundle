@@ -1,0 +1,109 @@
+.textarea {
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px 10px;
+    resize: vertical;
+    width: 100%;
+}
+
+.toggle {
+    background: none;
+    border: 0;
+    color: #52b6ca;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 6px 0 0;
+}
+
+.note {
+    color: #7c7c7c;
+    font-size: 12px;
+    margin: 6px 0 0;
+}
+
+.actions {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    padding-top: 8px;
+}
+
+.action {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: #52b6ca;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 12px;
+    gap: 4px;
+    padding: 0;
+}
+
+.action[disabled] {
+    color: #b0b0b0;
+    cursor: default;
+}
+
+.action-error {
+    color: #d9534f;
+    font-size: 12px;
+}
+
+/*
+    The reference sentence above the input. Same grey card as the Context panel it moved out
+    of, so nothing about the screen looks new - it is simply where a translator reads.
+*/
+.reference {
+    background: #f8f8f8;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+}
+
+.reference-header {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    min-height: 20px;
+}
+
+.reference-label {
+    color: #7c7c7c;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.reference-value {
+    font-style: italic;
+    margin: 4px 0 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.reference-actions {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.icon-action {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: #52b6ca;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+}
+
+.icon-action[disabled] {
+    color: #b0b0b0;
+    cursor: default;
+}

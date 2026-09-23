@@ -1,0 +1,41 @@
+.container {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 6px;
+}
+
+.label {
+    color: #7c7c7c;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+/*
+ * A chip that is already in the text has nothing to say, so it says it quietly. The missing
+ * one is the whole reason the row is there.
+ */
+.chip {
+    background: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    color: #4a4a4a;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    padding: 0 8px;
+}
+
+.chip-missing {
+    composes: chip;
+    background: #fdf0ef;
+    border-color: #d9534f;
+    color: #d9534f;
+}
+
+button.chip:hover,
+button.chip-missing:hover {
+    border-color: #52b6ca;
+}

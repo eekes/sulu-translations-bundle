@@ -1,0 +1,39 @@
+.trigger {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: #52b6ca;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 12px;
+    gap: 4px;
+    padding: 0;
+}
+
+.body p {
+    margin: 0 0 12px;
+}
+
+.example {
+    border-collapse: collapse;
+    margin: 0 0 12px;
+}
+
+.example th {
+    color: #7c7c7c;
+    font-size: 12px;
+    padding: 4px 16px 4px 0;
+    text-align: left;
+    text-transform: uppercase;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.example td {
+    padding: 4px 0;
+}
+
+.note {
+    color: #7c7c7c;
+    font-size: 12px;
+}

@@ -1,0 +1,49 @@
+.container {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.error {
+    color: #d9534f;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+    Quiet until the cell is hovered, exactly like the pencil in the value column: a page of
+    fifty globes would shout louder than the sentences they sit next to. Hovering the cell
+    rather than the row, because that is where the pointer already is when the editor has
+    finished reading the sentence they are about to translate.
+*/
+.globe {
+    background: none;
+    border: 0;
+    color: #52b6ca;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.35;
+    padding: 0;
+    transition: opacity 0.2s;
+}
+
+.container:hover .globe,
+.globe:focus {
+    opacity: 1;
+}
+
+.globe[disabled] {
+    color: #b0b0b0;
+    cursor: default;
+    opacity: 1;
+}

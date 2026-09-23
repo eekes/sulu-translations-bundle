@@ -1,0 +1,14 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/Application/var (?)
+    treatPhpDocTypesAsCertain: false
+
+    # The extensions come from phpstan/extension-installer. phpstan-symfony is deliberately left
+    # without a containerXmlPath: it would tie static analysis to a warmed test cache, and the
+    # rules that matter here do not need one.
+    doctrine:
+        objectManagerLoader: tests/object-manager.php

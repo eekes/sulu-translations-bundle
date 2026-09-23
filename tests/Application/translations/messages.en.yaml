@@ -1,0 +1,4 @@
+# The file side of the "database wins, files are the fallback" rule.
+homepage.title: 'From the file, in English'
+homepage.only_in_file: 'Only the file has this'
+checkout.greeting: 'Hello %name%'

@@ -1,0 +1,8 @@
+/vendor/
+/composer.lock
+/.phpunit.cache/
+/.phpunit.result.cache
+/.php-cs-fixer.cache
+/tests/Application/var/
+/assets/js/node_modules/
+.DS_Store

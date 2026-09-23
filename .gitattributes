@@ -1,0 +1,21 @@
+# Keep development-only files out of the dist archive a consumer downloads.
+/.editorconfig     export-ignore
+/.gitattributes    export-ignore
+/.github/          export-ignore
+/.gitignore        export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/CONTRIBUTING.md   export-ignore
+/SECURITY.md       export-ignore
+/phpstan.neon.dist export-ignore
+/phpunit.xml.dist  export-ignore
+/tests/            export-ignore
+
+# The admin JavaScript ships, its test setup does not.
+/assets/js/.npmrc       export-ignore
+/assets/js/babel.config.js export-ignore
+/assets/js/jest.config.js  export-ignore
+/assets/js/package-lock.json export-ignore
+/assets/js/tests/       export-ignore
+
+* text=auto eol=lf
+*.png binary

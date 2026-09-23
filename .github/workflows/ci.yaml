@@ -1,0 +1,97 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+jobs:
+    test:
+        name: 'PHP ${{ matrix.php-version }} (${{ matrix.dependency-versions }})'
+        runs-on: ubuntu-latest
+
+        services:
+            mysql:
+                image: mysql:8.0
+                env:
+                    MYSQL_ROOT_PASSWORD: ChangeMe
+                    # Sulu's test kernel appends `_test` to the database in DATABASE_URL
+                    MYSQL_DATABASE: sulu_translations_test
+                ports: ['3306:3306']
+                options: >-
+                    --health-cmd="mysqladmin ping"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=5
+
+        strategy:
+            fail-fast: false
+            matrix:
+                # The supported range, not what happens to be installed locally: an 8.3-only
+                # syntax feature would otherwise reach a consumer on 8.2 unnoticed.
+                php-version: ['8.2', '8.3', '8.4']
+                dependency-versions: ['highest']
+                include:
+                    - php-version: '8.2'
+                      dependency-versions: 'lowest'
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '${{ matrix.php-version }}'
+                  extensions: ctype, iconv, intl, mbstring, pdo_mysql
+                  coverage: none
+                  tools: composer:v2
+
+            - uses: ramsey/composer-install@v3
+              with:
+                  dependency-versions: '${{ matrix.dependency-versions }}'
+
+            - run: vendor/bin/phpunit
+              env:
+                  DATABASE_URL: 'mysql://root:ChangeMe@127.0.0.1:3306/sulu_translations?serverVersion=8.0'
+
+    static-analysis:
+        name: 'Static analysis and coding standard'
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.3'
+                  extensions: ctype, iconv, intl, mbstring, pdo_mysql
+                  coverage: none
+                  tools: composer:v2
+
+            - uses: ramsey/composer-install@v3
+
+            # phpstan-doctrine boots the test kernel to read the mapping, which needs the
+            # environment to be resolvable - not a database connection.
+            - run: vendor/bin/phpstan analyse --no-progress
+              env:
+                  DATABASE_URL: 'mysql://root:ChangeMe@127.0.0.1:3306/sulu_translations?serverVersion=8.0'
+
+            - run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+    admin-javascript:
+        name: 'Admin JavaScript'
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: assets/js
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+
+            - run: npm install
+
+            - run: npm test

@@ -1,0 +1,10 @@
+# Deprecations triggered inside Sulu and Symfony that this bundle cannot fix.
+#
+# The deprecation helper blames whichever test booted the kernel, so a deprecation raised while
+# Sulu's container compiles lands in the `self` bucket and trips `max[self]=0`. Listing them here
+# keeps that threshold meaningful for the deprecations the bundle really does trigger itself.
+#
+# Sulu 3.0 still enables Doctrine annotations, which framework-bundle deprecates from 6.4 on.
+# Only the `lowest` job installs a Symfony that still has these services, so this file can go
+# once the supported floor moves past them.
+%The "annotations\.(reader|cached_reader|cache_adapter|cache_warmer)" service is deprecated without replacement\.%

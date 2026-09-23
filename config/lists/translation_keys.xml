@@ -1,0 +1,198 @@
+<?xml version="1.0" ?>
+<list xmlns="http://schemas.sulu.io/list-builder/list">
+    <key>translation_keys</key>
+
+    <!--
+        One row per key, showing the value of the locale in the route. The locale arrives as a
+        query parameter and is bound by the controller with `setParameter('locale', ...)`; the
+        same pattern Sulu's own trash list uses for its translations.
+
+        A value row exists for every locale (see the `architecture` skill), so this join always
+        matches and a key nobody has translated is still a row - which is the entire point of a
+        "what still needs translating" screen.
+    -->
+    <joins name="value">
+        <join>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\Translation</entity-name>
+            <field-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey.translations</field-name>
+            <condition>Eekes\SuluTranslationsBundle\Domain\Model\Translation.locale = :locale</condition>
+        </join>
+    </joins>
+
+    <properties>
+        <property name="id" visibility="never" translation="sulu_admin.id">
+            <field-name>id</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey</entity-name>
+        </property>
+
+        <property
+            name="translationKey"
+            visibility="always"
+            searchability="yes"
+            sortable="true"
+            translation="eekes_sulu_translations.key"
+        >
+            <field-name>translationKey</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey</entity-name>
+
+            <filter type="text"/>
+        </property>
+
+        <property
+            name="domain"
+            visibility="yes"
+            searchability="no"
+            sortable="true"
+            width="shrink"
+            translation="eekes_sulu_translations.domain"
+        >
+            <field-name>domain</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey</entity-name>
+
+            <filter type="text"/>
+        </property>
+
+        <!--
+            Filled by the controller from the reference locale the editor picked. The
+            transformer renders the sentence and, on a row that is still empty, the globe that
+            machine translates it into the column next to it.
+        -->
+        <property
+            name="referenceValue"
+            visibility="always"
+            searchability="never"
+            sortable="false"
+            translation="eekes_sulu_translations.reference_value"
+        >
+            <field-name>id</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey</entity-name>
+
+            <transformer type="eekes_sulu_translations.reference_value"/>
+        </property>
+
+        <!--
+            The only column an editor touches. The transformer renders an input and PUTs the
+            single value; `translationId` travels with the row so it knows what to write.
+        -->
+        <property
+            name="value"
+            visibility="always"
+            searchability="yes"
+            sortable="true"
+            translation="eekes_sulu_translations.value"
+        >
+            <field-name>value</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\Translation</entity-name>
+
+            <joins ref="value"/>
+
+            <transformer type="eekes_sulu_translations.editable_value"/>
+
+            <filter type="text"/>
+        </property>
+
+        <!--
+            Never a column: the placeholders ride along on every row so the cell can mark a
+            value that dropped one and the open editor can list them, and a column of
+            `%name%` down a page would be forty repetitions of something only two rows have a
+            problem with.
+        -->
+        <property
+            name="placeholders"
+            visibility="never"
+            searchability="never"
+            sortable="false"
+            translation="eekes_sulu_translations.placeholders"
+        >
+            <field-name>placeholders</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey</entity-name>
+        </property>
+
+        <!--
+            Translated or not. A real boolean column (kept in step with the value by the
+            entity itself), so Sulu's own boolean filter and sorting work with no custom
+            JavaScript - which `value IS NULL` cannot give us.
+        -->
+        <property
+            name="translated"
+            visibility="always"
+            searchability="never"
+            sortable="true"
+            width="shrink"
+            translation="eekes_sulu_translations.translated"
+        >
+            <field-name>translated</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\Translation</entity-name>
+
+            <joins ref="value"/>
+
+            <transformer type="bool"/>
+
+            <filter type="boolean"/>
+        </property>
+
+        <property
+            name="source"
+            visibility="no"
+            searchability="never"
+            sortable="true"
+            width="shrink"
+            translation="eekes_sulu_translations.source"
+        >
+            <field-name>source</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey</entity-name>
+
+            <filter type="select">
+                <params>
+                    <param name="options" type="collection">
+                        <param name="file" value="eekes_sulu_translations.source.file"/>
+                        <param name="code" value="eekes_sulu_translations.source.code"/>
+                        <param name="runtime" value="eekes_sulu_translations.source.runtime"/>
+                        <param name="manual" value="eekes_sulu_translations.source.manual"/>
+                    </param>
+                </params>
+            </filter>
+        </property>
+
+        <property
+            name="lastUsedAt"
+            visibility="no"
+            searchability="never"
+            sortable="true"
+            translation="eekes_sulu_translations.last_used_at"
+        >
+            <field-name>lastUsedAt</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey</entity-name>
+
+            <transformer type="datetime"/>
+        </property>
+
+        <property
+            name="orphanedAt"
+            visibility="no"
+            searchability="never"
+            sortable="true"
+            translation="eekes_sulu_translations.orphaned_at"
+        >
+            <field-name>orphanedAt</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationKey</entity-name>
+
+            <transformer type="datetime"/>
+        </property>
+
+        <property
+            name="changed"
+            visibility="no"
+            searchability="never"
+            sortable="true"
+            translation="sulu_admin.changed"
+        >
+            <field-name>changed</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\Translation</entity-name>
+
+            <joins ref="value"/>
+
+            <transformer type="datetime"/>
+        </property>
+    </properties>
+</list>

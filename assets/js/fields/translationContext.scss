@@ -1,0 +1,57 @@
+.container {
+    background: #f8f8f8;
+    border-radius: 3px;
+    padding: 16px 20px;
+}
+
+.list {
+    display: grid;
+    grid-column-gap: 20px;
+    grid-row-gap: 8px;
+    grid-template-columns: 180px 1fr;
+    margin: 0;
+}
+
+.list dt {
+    color: #7c7c7c;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.list dd {
+    margin: 0;
+    word-break: break-word;
+}
+
+.occurrences {
+    list-style: none;
+    margin: 0;
+    /* All of them, however many there are - the panel scrolls rather than hiding any. */
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.occurrences li {
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.occurrences code {
+    font-family: monospace;
+}
+
+.lines {
+    color: #7c7c7c;
+    font-family: monospace;
+}
+
+.count {
+    background: #e4eef7;
+    border-radius: 8px;
+    color: #2b6ca3;
+    display: inline-block;
+    font-size: 11px;
+    margin-left: 6px;
+    padding: 0 6px;
+}

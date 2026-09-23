@@ -1,0 +1,52 @@
+<?xml version="1.0" ?>
+<form xmlns="http://schemas.sulu.io/template/template"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://schemas.sulu.io/template/template http://schemas.sulu.io/template/form-1.0.xsd"
+>
+    <key>translation_details</key>
+
+    <properties>
+        <!--
+            Everything an editor needs in order to translate the string without leaving the
+            form: the key itself, its domain, the value in the reference locale, where it
+            occurs and when it was last rendered. A custom field because Sulu has no read-only
+            field type worth the name, and because "the English above the French input" is the
+            whole difference between a usable translation screen and a list of boxes.
+        -->
+        <property name="context" type="translation_context" colspan="12">
+            <meta>
+                <title>eekes_sulu_translations.context</title>
+            </meta>
+        </property>
+
+        <!--
+            A text area, or the plural editor when the key is ICU. The field decides, because
+            an editor should never have to know which of the two this string is.
+        -->
+        <property name="value" type="translation_value" colspan="12">
+            <meta>
+                <title>eekes_sulu_translations.value</title>
+            </meta>
+        </property>
+
+        <!--
+            Switchable after the fact: a key imported from `messages+intl-icu.*.yaml` that is
+            not really a plural message, or a plain string that has to become one, both
+            happen. The write path validates every language before it lets the flag go on.
+        -->
+        <property name="icu" type="checkbox" colspan="6">
+            <meta>
+                <title>eekes_sulu_translations.icu</title>
+                <info_text>eekes_sulu_translations.icu_info</info_text>
+            </meta>
+        </property>
+
+        <property name="protected" type="checkbox" colspan="6">
+            <meta>
+                <title>eekes_sulu_translations.protected</title>
+                <info_text>eekes_sulu_translations.protected_info</info_text>
+            </meta>
+        </property>
+
+    </properties>
+</form>

@@ -1,0 +1,65 @@
+<?xml version="1.0" ?>
+<form xmlns="http://schemas.sulu.io/template/template"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://schemas.sulu.io/template/template http://schemas.sulu.io/template/form-1.0.xsd"
+>
+    <key>translation_add</key>
+
+    <!--
+        Adding a key by hand is the rare case - almost everything arrives through import, the
+        extractor or runtime discovery - but a project needs it for the strings it builds
+        dynamically, which no extractor will ever see.
+    -->
+    <properties>
+        <property name="translationKey" type="text_line" mandatory="true" colspan="8">
+            <meta>
+                <title>eekes_sulu_translations.key</title>
+            </meta>
+        </property>
+
+        <!--
+            Not `mandatory`, and no `default_value` param: Sulu honours that param in
+            `Checkbox`, `Select` and `SingleSelect` and nowhere else, so on a `text_line` it
+            did nothing at all. The field came up empty, the schema said it was required, and
+            saving answered "The form contains invalid values" without saying which field -
+            for every key anybody tried to add. Empty means `messages`, which the endpoint
+            already did.
+        -->
+        <property name="domain" type="text_line" colspan="4">
+            <meta>
+                <title>eekes_sulu_translations.domain</title>
+                <info_text>eekes_sulu_translations.domain_info</info_text>
+            </meta>
+        </property>
+
+        <property name="icu" type="checkbox" colspan="6">
+            <meta>
+                <title>eekes_sulu_translations.icu</title>
+                <info_text>eekes_sulu_translations.icu_info</info_text>
+            </meta>
+        </property>
+
+        <property name="protected" type="checkbox" colspan="6">
+            <meta>
+                <title>eekes_sulu_translations.protected</title>
+            </meta>
+        </property>
+
+        <!--
+            `translation_value`, the same field the edit form uses, and not a plain
+            `text_area`: it reads the `icu` checkbox above out of the form data, so ticking the
+            box swaps the text area for the plural editor while the key is being added. With a
+            text area here the checkbox saved the flag and changed nothing on screen, which
+            reads as "the ICU checkbox does not work when adding".
+
+            It degrades on its own for a key that does not exist yet: the machine-translation
+            button needs an id and a reference value, so it stays away until the key is saved.
+        -->
+        <property name="value" type="translation_value" colspan="12">
+            <meta>
+                <title>eekes_sulu_translations.value</title>
+            </meta>
+        </property>
+
+    </properties>
+</form>

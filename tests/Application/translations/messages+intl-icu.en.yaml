@@ -1,0 +1,2 @@
+# The ICU domain is a Symfony file convention; in the database it becomes a flag on the key.
+cart.items: '{count, plural, one {# item in your cart} other {# items in your cart}}'

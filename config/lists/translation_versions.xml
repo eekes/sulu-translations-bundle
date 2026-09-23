@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<list xmlns="http://schemas.sulu.io/list-builder/list">
+    <key>translation_versions</key>
+
+    <properties>
+        <property name="id" visibility="never" translation="sulu_admin.id">
+            <field-name>id</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationVersion</entity-name>
+        </property>
+
+        <property name="value" visibility="always" searchability="never" sortable="false" translation="eekes_sulu_translations.value">
+            <field-name>value</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationVersion</entity-name>
+        </property>
+
+        <property name="userName" visibility="yes" searchability="never" sortable="false" width="shrink" translation="eekes_sulu_translations.changed_by">
+            <field-name>userName</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationVersion</entity-name>
+        </property>
+
+        <property name="createdAt" visibility="always" searchability="never" sortable="true" width="shrink" translation="sulu_admin.created">
+            <field-name>createdAt</field-name>
+            <entity-name>Eekes\SuluTranslationsBundle\Domain\Model\TranslationVersion</entity-name>
+
+            <transformer type="datetime"/>
+        </property>
+    </properties>
+</list>

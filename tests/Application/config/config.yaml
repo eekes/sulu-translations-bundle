@@ -1,0 +1,26 @@
+# The activity trail only stores an event's payload when this is on, and it is off by default
+# in Sulu. Without it the trail still says who changed which key, but not what it said before.
+# The bundle does not prepend it: it is a project-wide decision about how much Sulu writes.
+sulu_activity:
+    storage:
+        persist_payload: true
+
+framework:
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        fallbacks: ['en']
+
+eekes_sulu_translations:
+    source_locale: 'en'
+    discovery:
+        # The recorder is exercised explicitly; leaving it on "auto" would make half the suite
+        # depend on whether the test kernel happens to be in debug mode.
+        collect_missing: never
+    machine_translation:
+        enabled: false
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false

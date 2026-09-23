@@ -1,0 +1,97 @@
+# Symfony has no hook for a bundle to register its own routes, so a consuming project imports
+# this file once in `config/routes/sulu_admin.yaml`. It is the single line of YAML the bundle
+# cannot prepend for you.
+#
+# The names matter: Sulu only exposes a route to the admin JavaScript when the part after the
+# dot starts with `get_`, `post_`, `put_`, `delete_` or `cdelete_`, and the resource
+# configuration below refers to them by name.
+
+eekes_sulu_translations.get_translation_keys:
+    path: /translation-keys.{_format}
+    methods: GET
+    controller: eekes_sulu_translations.admin_controller::cgetAction
+    format: json
+
+eekes_sulu_translations.get_translation_key:
+    path: /translation-keys/{id}.{_format}
+    methods: GET
+    controller: eekes_sulu_translations.admin_controller::getAction
+    format: json
+    requirements:
+        id: \d+
+
+eekes_sulu_translations.post_translation_key:
+    path: /translation-keys.{_format}
+    methods: POST
+    controller: eekes_sulu_translations.admin_controller::postAction
+    format: json
+
+eekes_sulu_translations.put_translation_key:
+    path: /translation-keys/{id}.{_format}
+    methods: PUT
+    controller: eekes_sulu_translations.admin_controller::putAction
+    format: json
+    requirements:
+        id: \d+
+
+eekes_sulu_translations.delete_translation_key:
+    path: /translation-keys/{id}.{_format}
+    methods: DELETE
+    controller: eekes_sulu_translations.admin_controller::deleteAction
+    format: json
+    requirements:
+        id: \d+
+
+eekes_sulu_translations.cdelete_translation_keys:
+    path: /translation-keys.{_format}
+    methods: DELETE
+    controller: eekes_sulu_translations.admin_controller::cdeleteAction
+    format: json
+
+eekes_sulu_translations.get_translation_versions:
+    path: /translation-versions.{_format}
+    methods: GET
+    controller: eekes_sulu_translations.version_controller::cgetAction
+    format: json
+
+eekes_sulu_translations.post_translation_version_trigger:
+    path: /translation-versions/{id}.{_format}
+    methods: POST
+    controller: eekes_sulu_translations.version_controller::postTriggerAction
+    format: json
+    requirements:
+        id: \d+
+
+# The list toolbar. Each of these answers a dry run as well, because every dialog shows what it
+# is about to do before it does it.
+eekes_sulu_translations.post_translation_search_replace:
+    path: /translation-actions/search-replace.{_format}
+    methods: POST
+    controller: eekes_sulu_translations.action_controller::postSearchReplaceAction
+    format: json
+
+eekes_sulu_translations.post_translation_copy_locale:
+    path: /translation-actions/copy-locale.{_format}
+    methods: POST
+    controller: eekes_sulu_translations.action_controller::postCopyLocaleAction
+    format: json
+
+eekes_sulu_translations.post_translation_machine_translate:
+    path: /translation-actions/machine-translate.{_format}
+    methods: POST
+    controller: eekes_sulu_translations.action_controller::postMachineTranslateAction
+    format: json
+
+# One field, translated from the reference language and handed back unsaved - what the
+# translate button next to the value field calls.
+eekes_sulu_translations.post_translation_translate_field:
+    path: /translation-actions/translate-field.{_format}
+    methods: POST
+    controller: eekes_sulu_translations.action_controller::postTranslateFieldAction
+    format: json
+
+eekes_sulu_translations.post_translation_import:
+    path: /translation-actions/import.{_format}
+    methods: POST
+    controller: eekes_sulu_translations.action_controller::postImportAction
+    format: json
