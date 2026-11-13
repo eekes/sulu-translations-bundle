@@ -34,17 +34,31 @@ class CatalogueVersionProviderTest extends TestCase
         $provider->getVersion();
     }
 
-    public function testWithoutATtlEveryCallAsksTheDatabase(): void
+    public function testWithoutATtlTheVersionIsReadOncePerRequest(): void
     {
         $state = $this->createMock(CatalogueStateRepositoryInterface::class);
-        $state->expects(self::exactly(2))->method('getFingerprint')->willReturn('abc.4');
+        $state->expects(self::once())->method('getFingerprint')->willReturn('abc.4');
 
-        // The default: one tiny primary-key read per request, and an edit is live on the next
-        // one.
+        // The default: one tiny primary-key read per request, however many messages the page
+        // translates, and an edit is live on the next request.
         $provider = new CatalogueVersionProvider($state, 0);
 
         $provider->getVersion();
         $provider->getVersion();
+        $provider->getVersion();
+    }
+
+    public function testWithoutATtlTheNextRequestAsksTheDatabaseAgain(): void
+    {
+        $state = $this->createMock(CatalogueStateRepositoryInterface::class);
+        $state->expects(self::exactly(2))->method('getFingerprint')->willReturnOnConsecutiveCalls('abc.4', 'abc.5');
+
+        $provider = new CatalogueVersionProvider($state, 0);
+
+        self::assertSame('abc.4', $provider->getVersion());
+        // `kernel.reset` between two requests of a worker, or a write in the same request
+        $provider->reset();
+        self::assertSame('abc.5', $provider->getVersion());
     }
 
     public function testATtlMemoisesTheVersion(): void

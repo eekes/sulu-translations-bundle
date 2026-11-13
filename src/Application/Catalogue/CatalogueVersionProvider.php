@@ -59,7 +59,10 @@ class CatalogueVersionProvider
             return null;
         }
 
-        if (null !== $this->version && $this->ttl > 0 && $now - $this->readAt < $this->ttl) {
+        // Without a TTL the version is read once per request: every trans() call asks for it, and
+        // `kernel.reset` (between requests and messages) and a write (TranslationManager::commit)
+        // make it ask the database again.
+        if (null !== $this->version && (0 === $this->ttl || $now - $this->readAt < $this->ttl)) {
             return $this->version;
         }
 
