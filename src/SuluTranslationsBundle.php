@@ -392,6 +392,8 @@ final class SuluTranslationsBundle extends AbstractBundle
                 $config['versions']['keep'],
                 service('sulu_activity.domain_event_collector')->nullOnInvalid(),
                 service('security.token_storage')->nullOnInvalid(),
+                // Only registered when a proxy client is configured.
+                service('sulu_http_cache.cache_manager')->nullOnInvalid(),
             ])
             ->public();
         $services->alias(TranslationManagerInterface::class, 'eekes_sulu_translations.manager')->public();

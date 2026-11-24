@@ -25,6 +25,7 @@ use Eekes\SuluTranslationsBundle\Domain\Repository\TranslationKeyRepositoryInter
 use Eekes\SuluTranslationsBundle\Domain\Repository\TranslationRepositoryInterface;
 use Eekes\SuluTranslationsBundle\Domain\Repository\TranslationVersionRepositoryInterface;
 use Sulu\Bundle\ActivityBundle\Application\Collector\DomainEventCollectorInterface;
+use Sulu\Bundle\HttpCacheBundle\Cache\CacheManagerInterface;
 use Sulu\Component\Security\Authentication\UserInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
@@ -60,6 +61,7 @@ class TranslationManager implements TranslationManagerInterface
         private readonly int $versionsKeep = 20,
         private readonly ?DomainEventCollectorInterface $domainEventCollector = null,
         private readonly ?TokenStorageInterface $tokenStorage = null,
+        private readonly ?CacheManagerInterface $httpCacheManager = null,
     ) {
     }
 
@@ -217,8 +219,8 @@ class TranslationManager implements TranslationManagerInterface
     }
 
     /**
-     * Flush, bump the catalogue version, and drop the in-process caches so the rest of this
-     * request already sees the write.
+     * Flush, bump the catalogue version, drop the in-process caches so the rest of this
+     * request already sees the write, and clear the HTTP cache so the website does too.
      *
      * The bump is last and inside the transaction: bumping first lets a concurrent reader
      * cache the *old* messages under the *new* version, which is a stale string nobody can
@@ -239,6 +241,10 @@ class TranslationManager implements TranslationManagerInterface
 
         $this->versionProvider->reset();
         $this->catalogueProvider->reset();
+
+        // Any rendered page can contain the value, so there is no tag to narrow this down to.
+        // A proxy that cannot be cleared as a whole (Varnish) makes this a no-op.
+        $this->httpCacheManager?->clear();
     }
 
     public function searchAndReplace(

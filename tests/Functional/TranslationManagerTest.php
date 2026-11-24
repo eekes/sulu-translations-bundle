@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Eekes\SuluTranslationsBundle\Tests\Functional;
 
+use Eekes\SuluTranslationsBundle\Application\Manager\TranslationManager;
 use Eekes\SuluTranslationsBundle\Domain\Exception\InvalidIcuMessageException;
 use Eekes\SuluTranslationsBundle\Domain\Exception\PlaceholderMismatchException;
 use Eekes\SuluTranslationsBundle\Domain\Exception\PlaceholderStillInUseException;
 use Eekes\SuluTranslationsBundle\Domain\Exception\TranslationWriteNotAllowedException;
 use Eekes\SuluTranslationsBundle\Domain\Model\TranslationVersion;
+use Sulu\Bundle\HttpCacheBundle\Cache\CacheManagerInterface;
 
 /**
  * The six things that have to happen together on every write, and in order.
@@ -314,5 +316,60 @@ class TranslationManagerTest extends TranslationsTestCase
 
         self::assertSame('English one', self::valueOf('copy.one', 'nl'));
         self::assertSame('Al vertaald', self::valueOf('copy.two', 'nl'));
+    }
+
+    /**
+     * The website serves a saved value on the next request - but Sulu's HTTP cache keeps the
+     * rendered page, so without this an editor sees the change only when the page expires.
+     */
+    public function testAWriteClearsTheHttpCache(): void
+    {
+        $english = self::givenTranslation('checkout.greeting', 'en', 'Hello');
+        $cacheManager = $this->createMock(CacheManagerInterface::class);
+        $cacheManager->expects($this->once())->method('clear');
+
+        self::translationManagerWithHttpCache($cacheManager)->saveValue($english, 'Hi');
+    }
+
+    public function testABatchClearsTheHttpCacheOnce(): void
+    {
+        self::givenTranslation('checkout.greeting', 'en', 'Hello');
+        self::givenTranslation('checkout.farewell', 'en', 'Bye');
+        $cacheManager = $this->createMock(CacheManagerInterface::class);
+        $cacheManager->expects($this->once())->method('clear');
+        $manager = self::translationManagerWithHttpCache($cacheManager);
+
+        foreach (['checkout.greeting' => 'Hi', 'checkout.farewell' => 'See you'] as $key => $value) {
+            $english = self::requireKey($key)->getTranslation('en');
+            self::assertNotNull($english);
+            $manager->stageValue($english, $value);
+        }
+        $manager->commit();
+    }
+
+    private static function translationManagerWithHttpCache(CacheManagerInterface $cacheManager): TranslationManager
+    {
+        $container = static::getContainer();
+        $sourceLocale = $container->getParameter('eekes_sulu_translations.source_locale');
+        self::assertIsString($sourceLocale);
+
+        /** @var mixed[] $services */
+        $services = \array_map(
+            static fn (string $id): object => $container->get($id) ?? throw new \LogicException($id),
+            [
+                'doctrine.orm.entity_manager',
+                'eekes_sulu_translations.translation_repository',
+                'eekes_sulu_translations.key_repository',
+                'eekes_sulu_translations.version_repository',
+                'eekes_sulu_translations.state_repository',
+                'eekes_sulu_translations.placeholder_validator',
+                'eekes_sulu_translations.placeholder_extractor',
+                'eekes_sulu_translations.icu_validator',
+                'eekes_sulu_translations.catalogue_provider',
+                'eekes_sulu_translations.catalogue_version',
+            ],
+        );
+
+        return new TranslationManager(...[...$services, $sourceLocale, [], 20, null, null, $cacheManager]);
     }
 }
